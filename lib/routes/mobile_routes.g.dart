@@ -74,6 +74,13 @@ mixin $MobileSearchRouteData on GoRouteData {
               _$boolConverter,
             ) ??
             false,
+        useFuzzySearch:
+            _$convertMapValue(
+              'use-fuzzy-search',
+              state.uri.queryParameters,
+              _$boolConverter,
+            ) ??
+            false,
       );
 
   MobileSearchRouteData get _self => this as MobileSearchRouteData;
@@ -84,6 +91,8 @@ mixin $MobileSearchRouteData on GoRouteData {
     queryParams: {
       if (_self.useOnlineSearch != false)
         'use-online-search': _self.useOnlineSearch.toString(),
+      if (_self.useFuzzySearch != false)
+        'use-fuzzy-search': _self.useFuzzySearch.toString(),
     },
   );
 
@@ -179,6 +188,13 @@ mixin $MobileSearchQueryRouteData on GoRouteData {
               _$boolConverter,
             ) ??
             false,
+        useFuzzySearch:
+            _$convertMapValue(
+              'use-fuzzy-search',
+              state.uri.queryParameters,
+              _$boolConverter,
+            ) ??
+            false,
       );
 
   MobileSearchQueryRouteData get _self => this as MobileSearchQueryRouteData;
@@ -189,6 +205,8 @@ mixin $MobileSearchQueryRouteData on GoRouteData {
     queryParams: {
       if (_self.useOnlineSearch != false)
         'use-online-search': _self.useOnlineSearch.toString(),
+      if (_self.useFuzzySearch != false)
+        'use-fuzzy-search': _self.useFuzzySearch.toString(),
     },
   );
 

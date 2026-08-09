@@ -14,6 +14,7 @@ class CatalogSearchState {
     this.isLoading = false,
     this.isOnlineSearchActive = false,
     this.useOnlineSearch = false,
+    this.useFuzzySearch = false,
     this.errorMessage,
     this.streamStatus,
     this.movieResults = const <MovieListItemDto>[],
@@ -31,6 +32,7 @@ class CatalogSearchState {
   final bool isLoading;
   final bool isOnlineSearchActive;
   final bool useOnlineSearch;
+  final bool useFuzzySearch;
   final String? errorMessage;
   final CatalogSearchStreamStatus? streamStatus;
   final List<MovieListItemDto> movieResults;
@@ -52,6 +54,7 @@ class CatalogSearchState {
     bool? isLoading,
     bool? isOnlineSearchActive,
     bool? useOnlineSearch,
+    bool? useFuzzySearch,
     Object? errorMessage = _sentinel,
     Object? streamStatus = _sentinel,
     List<MovieListItemDto>? movieResults,
@@ -70,6 +73,7 @@ class CatalogSearchState {
       isLoading: isLoading ?? this.isLoading,
       isOnlineSearchActive: isOnlineSearchActive ?? this.isOnlineSearchActive,
       useOnlineSearch: useOnlineSearch ?? this.useOnlineSearch,
+      useFuzzySearch: useFuzzySearch ?? this.useFuzzySearch,
       errorMessage:
           identical(errorMessage, _sentinel)
               ? this.errorMessage

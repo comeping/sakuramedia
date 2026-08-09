@@ -21,11 +21,13 @@ class CatalogSearchPage extends ConsumerStatefulWidget {
     required this.initialQuery,
     this.fallbackPath,
     this.initialUseOnlineSearch = false,
+    this.initialUseFuzzySearch = false,
   });
 
   final String initialQuery;
   final String? fallbackPath;
   final bool initialUseOnlineSearch;
+  final bool initialUseFuzzySearch;
 
   @override
   ConsumerState<CatalogSearchPage> createState() => _CatalogSearchPageState();
@@ -62,6 +64,7 @@ class _CatalogSearchPageState extends ConsumerState<CatalogSearchPage>
           .bootstrap(
             initialQuery: widget.initialQuery,
             initialUseOnlineSearch: widget.initialUseOnlineSearch,
+            initialUseFuzzySearch: widget.initialUseFuzzySearch,
           );
     });
     _textController = TextEditingController(text: widget.initialQuery);
@@ -81,12 +84,20 @@ class _CatalogSearchPageState extends ConsumerState<CatalogSearchPage>
     super.didUpdateWidget(oldWidget);
     final useOnlineSearchChanged =
         oldWidget.initialUseOnlineSearch != widget.initialUseOnlineSearch;
+    final useFuzzySearchChanged =
+        oldWidget.initialUseFuzzySearch != widget.initialUseFuzzySearch;
     if (useOnlineSearchChanged) {
       ref
           .read(catalogSearchProvider(_scope).notifier)
           .setUseOnlineSearch(widget.initialUseOnlineSearch);
     }
+    if (useFuzzySearchChanged) {
+      ref
+          .read(catalogSearchProvider(_scope).notifier)
+          .setUseFuzzySearch(widget.initialUseFuzzySearch);
+    }
     if (!useOnlineSearchChanged &&
+        !useFuzzySearchChanged &&
         oldWidget.initialQuery == widget.initialQuery) {
       return;
     }
@@ -101,6 +112,8 @@ class _CatalogSearchPageState extends ConsumerState<CatalogSearchPage>
             widget.initialQuery,
             useOnlineSearch:
                 ref.read(catalogSearchProvider(_scope)).useOnlineSearch,
+            useFuzzySearch:
+                ref.read(catalogSearchProvider(_scope)).useFuzzySearch,
           ),
     );
   }
@@ -134,6 +147,11 @@ class _CatalogSearchPageState extends ConsumerState<CatalogSearchPage>
           (value) => ref
               .read(catalogSearchProvider(_scope).notifier)
               .setUseOnlineSearch(value),
+      useFuzzySearch: searchState.useFuzzySearch,
+      onFuzzySearchToggle:
+          (value) => ref
+              .read(catalogSearchProvider(_scope).notifier)
+              .setUseFuzzySearch(value),
       onSubmitSearch: _submitSearch,
       onTabSelected:
           (index) => ref
@@ -169,23 +187,25 @@ class _CatalogSearchPageState extends ConsumerState<CatalogSearchPage>
   void _submitSearch() {
     final submittedQuery = _textController.text;
     final trimmedQuery = submittedQuery.trim();
+    final currentState = ref.read(catalogSearchProvider(_scope));
     final routeLocation = _routeLocationFor(
       query: submittedQuery,
-      useOnlineSearch: ref.read(catalogSearchProvider(_scope)).useOnlineSearch,
+      useOnlineSearch: currentState.useOnlineSearch,
+      useFuzzySearch: currentState.useFuzzySearch,
     );
     final currentLocation = _currentRouteLocationOr(routeLocation);
 
     if (trimmedQuery.isNotEmpty &&
         routeLocation == currentLocation &&
-        ref.read(catalogSearchProvider(_scope)).useOnlineSearch ==
-            widget.initialUseOnlineSearch) {
+        currentState.useOnlineSearch == widget.initialUseOnlineSearch &&
+        currentState.useFuzzySearch == widget.initialUseFuzzySearch) {
       unawaited(
         ref
             .read(catalogSearchProvider(_scope).notifier)
             .submit(
               submittedQuery,
-              useOnlineSearch:
-                  ref.read(catalogSearchProvider(_scope)).useOnlineSearch,
+              useOnlineSearch: currentState.useOnlineSearch,
+              useFuzzySearch: currentState.useFuzzySearch,
             ),
       );
       return;
@@ -193,7 +213,8 @@ class _CatalogSearchPageState extends ConsumerState<CatalogSearchPage>
 
     context.pushDesktopSearch(
       query: submittedQuery,
-      useOnlineSearch: ref.read(catalogSearchProvider(_scope)).useOnlineSearch,
+      useOnlineSearch: currentState.useOnlineSearch,
+      useFuzzySearch: currentState.useFuzzySearch,
     );
   }
 
@@ -222,6 +243,7 @@ class _CatalogSearchPageState extends ConsumerState<CatalogSearchPage>
       _routeLocationFor(
         query: widget.initialQuery,
         useOnlineSearch: widget.initialUseOnlineSearch,
+        useFuzzySearch: widget.initialUseFuzzySearch,
       ),
     );
   }
@@ -237,14 +259,19 @@ class _CatalogSearchPageState extends ConsumerState<CatalogSearchPage>
   String _routeLocationFor({
     required String query,
     required bool useOnlineSearch,
+    required bool useFuzzySearch,
   }) {
     final trimmed = query.trim();
     if (trimmed.isEmpty) {
-      return DesktopSearchRouteData(useOnlineSearch: useOnlineSearch).location;
+      return DesktopSearchRouteData(
+        useOnlineSearch: useOnlineSearch,
+        useFuzzySearch: useFuzzySearch,
+      ).location;
     }
     return DesktopSearchQueryRouteData(
       query: trimmed,
       useOnlineSearch: useOnlineSearch,
+      useFuzzySearch: useFuzzySearch,
     ).location;
   }
 }

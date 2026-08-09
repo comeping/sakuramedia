@@ -19,6 +19,8 @@ class CatalogSearchContent extends StatelessWidget {
     required this.tabController,
     required this.useOnlineSearch,
     required this.onOnlineSearchToggle,
+    this.useFuzzySearch = false,
+    this.onFuzzySearchToggle,
     required this.onSubmitSearch,
     required this.onTabSelected,
     required this.onMovieTap,
@@ -34,6 +36,10 @@ class CatalogSearchContent extends StatelessWidget {
   final TabController tabController;
   final bool useOnlineSearch;
   final ValueChanged<bool> onOnlineSearchToggle;
+
+  /// 模糊搜索开关：默认关闭，与在线搜索并列展示在搜索框右侧。
+  final bool useFuzzySearch;
+  final ValueChanged<bool>? onFuzzySearchToggle;
   final VoidCallback onSubmitSearch;
   final ValueChanged<int> onTabSelected;
   final ValueChanged<MovieListItemDto> onMovieTap;
@@ -61,11 +67,15 @@ class CatalogSearchContent extends StatelessWidget {
                   onlineToggleKey: const Key(
                     'catalog-search-page-online-toggle',
                   ),
+                  fuzzyToggleKey: const Key('catalog-search-page-fuzzy-toggle'),
                   controller: textController,
                   hintText: '如 SSNI-888、三上悠亚',
                   showOnlineToggle: true,
                   isOnlineSearchEnabled: useOnlineSearch,
                   onOnlineSearchToggle: onOnlineSearchToggle,
+                  showFuzzyToggle: onFuzzySearchToggle != null,
+                  isFuzzySearchEnabled: useFuzzySearch,
+                  onFuzzySearchToggle: onFuzzySearchToggle,
                   onSubmitted: (_) => onSubmitSearch(),
                   onSearchTap: onSubmitSearch,
                 ),

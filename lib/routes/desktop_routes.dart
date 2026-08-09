@@ -435,9 +435,13 @@ class DesktopSystemDiagnosticsRouteData extends _DesktopShellPageRouteData
 
 class DesktopSearchRouteData extends _DesktopShellPageRouteData
     with $DesktopSearchRouteData {
-  const DesktopSearchRouteData({this.useOnlineSearch = false});
+  const DesktopSearchRouteData({
+    this.useOnlineSearch = false,
+    this.useFuzzySearch = false,
+  });
 
   final bool useOnlineSearch;
+  final bool useFuzzySearch;
 
   @override
   String get pageName => 'desktop-search-empty';
@@ -447,6 +451,7 @@ class DesktopSearchRouteData extends _DesktopShellPageRouteData
     path: desktopSearchPath,
     queryParameters: <String, String?>{
       if (useOnlineSearch) 'useOnlineSearch': '$useOnlineSearch',
+      if (useFuzzySearch) 'useFuzzySearch': '$useFuzzySearch',
     },
   );
 
@@ -459,6 +464,11 @@ class DesktopSearchRouteData extends _DesktopShellPageRouteData
         names: const <String>['useOnlineSearch', 'use-online-search'],
         fallback: useOnlineSearch,
       ),
+      initialUseFuzzySearch: resolveBoolQueryParameter(
+        state,
+        names: const <String>['useFuzzySearch', 'use-fuzzy-search'],
+        fallback: useFuzzySearch,
+      ),
     );
   }
 }
@@ -468,10 +478,12 @@ class DesktopSearchQueryRouteData extends _DesktopShellPageRouteData
   const DesktopSearchQueryRouteData({
     required this.query,
     this.useOnlineSearch = false,
+    this.useFuzzySearch = false,
   });
 
   final String query;
   final bool useOnlineSearch;
+  final bool useFuzzySearch;
 
   @override
   String get pageName => 'desktop-search';
@@ -481,6 +493,7 @@ class DesktopSearchQueryRouteData extends _DesktopShellPageRouteData
     path: '$desktopSearchPath/${Uri.encodeComponent(query)}',
     queryParameters: <String, String?>{
       if (useOnlineSearch) 'useOnlineSearch': '$useOnlineSearch',
+      if (useFuzzySearch) 'useFuzzySearch': '$useFuzzySearch',
     },
   );
 
@@ -492,6 +505,11 @@ class DesktopSearchQueryRouteData extends _DesktopShellPageRouteData
         state,
         names: const <String>['useOnlineSearch', 'use-online-search'],
         fallback: useOnlineSearch,
+      ),
+      initialUseFuzzySearch: resolveBoolQueryParameter(
+        state,
+        names: const <String>['useFuzzySearch', 'use-fuzzy-search'],
+        fallback: useFuzzySearch,
       ),
     );
   }

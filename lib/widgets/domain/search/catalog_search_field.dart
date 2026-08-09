@@ -10,6 +10,7 @@ class CatalogSearchField extends StatelessWidget {
     this.searchButtonKey,
     this.imageSearchButtonKey,
     this.onlineToggleKey,
+    this.fuzzyToggleKey,
     required this.controller,
     required this.hintText,
     this.onSubmitted,
@@ -19,6 +20,9 @@ class CatalogSearchField extends StatelessWidget {
     this.showOnlineToggle = false,
     this.isOnlineSearchEnabled = false,
     this.onOnlineSearchToggle,
+    this.showFuzzyToggle = false,
+    this.isFuzzySearchEnabled = false,
+    this.onFuzzySearchToggle,
     this.fillColor,
   });
 
@@ -26,6 +30,7 @@ class CatalogSearchField extends StatelessWidget {
   final Key? searchButtonKey;
   final Key? imageSearchButtonKey;
   final Key? onlineToggleKey;
+  final Key? fuzzyToggleKey;
   final TextEditingController controller;
   final String hintText;
   final ValueChanged<String>? onSubmitted;
@@ -35,6 +40,12 @@ class CatalogSearchField extends StatelessWidget {
   final bool showOnlineToggle;
   final bool isOnlineSearchEnabled;
   final ValueChanged<bool>? onOnlineSearchToggle;
+
+  /// 模糊搜索开关：开启后按标题 / 中文标题 / 番号做宽泛子串匹配，跳过番号解析
+  /// 与女优搜索流程，固定展示影片结果。
+  final bool showFuzzyToggle;
+  final bool isFuzzySearchEnabled;
+  final ValueChanged<bool>? onFuzzySearchToggle;
 
   /// 覆盖默认的填充色；用于把搜索框放到比 `surfaceMuted` 更暗的面板（如侧边栏）上时提升对比。
   final Color? fillColor;
@@ -67,6 +78,17 @@ class CatalogSearchField extends StatelessWidget {
                   onOnlineSearchToggle == null
                       ? null
                       : () => onOnlineSearchToggle!(!isOnlineSearchEnabled),
+            ),
+          if (showFuzzyToggle)
+            AppIconButton(
+              key: fuzzyToggleKey,
+              tooltip: '模糊搜索',
+              icon: const Icon(Icons.manage_search_rounded),
+              isSelected: isFuzzySearchEnabled,
+              onPressed:
+                  onFuzzySearchToggle == null
+                      ? null
+                      : () => onFuzzySearchToggle!(!isFuzzySearchEnabled),
             ),
           AppIconButton(
             key: searchButtonKey,

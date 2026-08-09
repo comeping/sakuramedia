@@ -84,9 +84,13 @@ class MobileLoginRouteData extends GoRouteData with $MobileLoginRouteData {
 @TypedGoRoute<MobileSearchRouteData>(path: mobileSearchPath)
 class MobileSearchRouteData extends _MobileSubpageRouteData
     with $MobileSearchRouteData {
-  const MobileSearchRouteData({this.useOnlineSearch = false});
+  const MobileSearchRouteData({
+    this.useOnlineSearch = false,
+    this.useFuzzySearch = false,
+  });
 
   final bool useOnlineSearch;
+  final bool useFuzzySearch;
 
   @override
   String get pageName => 'mobile-search-empty';
@@ -102,6 +106,7 @@ class MobileSearchRouteData extends _MobileSubpageRouteData
     path: mobileSearchPath,
     queryParameters: <String, String?>{
       if (useOnlineSearch) 'useOnlineSearch': '$useOnlineSearch',
+      if (useFuzzySearch) 'useFuzzySearch': '$useFuzzySearch',
     },
   );
 
@@ -113,6 +118,11 @@ class MobileSearchRouteData extends _MobileSubpageRouteData
         state,
         names: const <String>['useOnlineSearch', 'use-online-search'],
         fallback: useOnlineSearch,
+      ),
+      initialUseFuzzySearch: resolveBoolQueryParameter(
+        state,
+        names: const <String>['useFuzzySearch', 'use-fuzzy-search'],
+        fallback: useFuzzySearch,
       ),
     );
   }
@@ -189,10 +199,12 @@ class MobileSearchQueryRouteData extends _MobileSubpageRouteData
   const MobileSearchQueryRouteData({
     required this.query,
     this.useOnlineSearch = false,
+    this.useFuzzySearch = false,
   });
 
   final String query;
   final bool useOnlineSearch;
+  final bool useFuzzySearch;
 
   @override
   String get pageName => 'mobile-search';
@@ -208,6 +220,7 @@ class MobileSearchQueryRouteData extends _MobileSubpageRouteData
     path: '$mobileSearchPath/${Uri.encodeComponent(query)}',
     queryParameters: <String, String?>{
       if (useOnlineSearch) 'useOnlineSearch': '$useOnlineSearch',
+      if (useFuzzySearch) 'useFuzzySearch': '$useFuzzySearch',
     },
   );
 
@@ -219,6 +232,11 @@ class MobileSearchQueryRouteData extends _MobileSubpageRouteData
         state,
         names: const <String>['useOnlineSearch', 'use-online-search'],
         fallback: useOnlineSearch,
+      ),
+      initialUseFuzzySearch: resolveBoolQueryParameter(
+        state,
+        names: const <String>['useFuzzySearch', 'use-fuzzy-search'],
+        fallback: useFuzzySearch,
       ),
     );
   }

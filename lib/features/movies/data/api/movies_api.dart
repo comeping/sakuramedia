@@ -27,6 +27,7 @@ class MoviesApi {
     int? year,
     List<int>? tagIds,
     TagMatchMode? tagMatch,
+    String? keyword,
     int page = 1,
     int pageSize = 20,
   }) async {
@@ -59,6 +60,12 @@ class MoviesApi {
         queryParameters['tag_match'] = tagMatch.apiValue;
       }
     }
+    // 模糊搜索关键词：后端 `q` 参数对 title/title_zh/movie_number 做 OR 子串匹配，
+    // 与其它筛选条件是 AND 关系。传纯空白会被后端拒绝（422），这里先 trim 再判空。
+    final trimmedKeyword = keyword?.trim();
+    if (trimmedKeyword != null && trimmedKeyword.isNotEmpty) {
+      queryParameters['q'] = trimmedKeyword;
+    }
 
     final response = await _apiClient.get(
       '/movies',
@@ -68,6 +75,24 @@ class MoviesApi {
       response,
       MovieListItemDto.fromJson,
     );
+  }
+
+  /// 模糊搜索：按标题 / 中文标题 / 番号对关键词做 OR 子串匹配（`GET /movies?q=`）。
+  ///
+  /// 目录搜索页在开启「模糊搜索」时使用，跳过番号解析 + 精确/在线搜索流程，
+  /// 直接把关键词交给后端做宽泛匹配；语义与影片库筛选器的 `keyword` 完全一致，
+  /// 这里只是给搜索页一个语义更直白的入口。
+  Future<List<MovieListItemDto>> searchMoviesFuzzy({
+    required String keyword,
+    int page = 1,
+    int pageSize = 20,
+  }) async {
+    final result = await getMovies(
+      keyword: keyword,
+      page: page,
+      pageSize: pageSize,
+    );
+    return result.items;
   }
 
   Future<PaginatedResponseDto<MovieListItemDto>> getLatestMovies({

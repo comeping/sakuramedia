@@ -91,6 +91,7 @@ class MovieSummary extends _$MovieSummary
         numberSource: filter.movie.numberSource,
         sort: filter.movie.sortExpression,
         year: filter.movie.year,
+        keyword: filter.movie.keyword,
       ),
       MovieSummarySource.tags => moviesApi.getMovies(
         tagIds: filter.tagIds,
@@ -102,6 +103,7 @@ class MovieSummary extends _$MovieSummary
         numberSource: filter.movie.numberSource,
         sort: filter.movie.sortExpression,
         year: filter.movie.year,
+        keyword: filter.movie.keyword,
       ),
       MovieSummarySource.subscribedActorsLatest => moviesApi
           .getSubscribedActorsLatestMovies(page: page, pageSize: pageSize),
@@ -114,6 +116,7 @@ class MovieSummary extends _$MovieSummary
         numberSource: filter.movie.numberSource,
         sort: filter.movie.sortExpression,
         year: filter.movie.year,
+        keyword: filter.movie.keyword,
       ),
       MovieSummarySource.playlist => ref
           .read(playlistsApiProvider)

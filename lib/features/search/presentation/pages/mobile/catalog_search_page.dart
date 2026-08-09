@@ -20,10 +20,12 @@ class MobileCatalogSearchPage extends ConsumerStatefulWidget {
     super.key,
     required this.initialQuery,
     this.initialUseOnlineSearch = false,
+    this.initialUseFuzzySearch = false,
   });
 
   final String initialQuery;
   final bool initialUseOnlineSearch;
+  final bool initialUseFuzzySearch;
 
   @override
   ConsumerState<MobileCatalogSearchPage> createState() =>
@@ -61,6 +63,7 @@ class _MobileCatalogSearchPageState
           .bootstrap(
             initialQuery: widget.initialQuery,
             initialUseOnlineSearch: widget.initialUseOnlineSearch,
+            initialUseFuzzySearch: widget.initialUseFuzzySearch,
           );
     });
     _textController = TextEditingController(text: widget.initialQuery);
@@ -80,12 +83,20 @@ class _MobileCatalogSearchPageState
     super.didUpdateWidget(oldWidget);
     final useOnlineSearchChanged =
         oldWidget.initialUseOnlineSearch != widget.initialUseOnlineSearch;
+    final useFuzzySearchChanged =
+        oldWidget.initialUseFuzzySearch != widget.initialUseFuzzySearch;
     if (useOnlineSearchChanged) {
       ref
           .read(catalogSearchProvider(_scope).notifier)
           .setUseOnlineSearch(widget.initialUseOnlineSearch);
     }
+    if (useFuzzySearchChanged) {
+      ref
+          .read(catalogSearchProvider(_scope).notifier)
+          .setUseFuzzySearch(widget.initialUseFuzzySearch);
+    }
     if (!useOnlineSearchChanged &&
+        !useFuzzySearchChanged &&
         oldWidget.initialQuery == widget.initialQuery) {
       return;
     }
@@ -100,6 +111,8 @@ class _MobileCatalogSearchPageState
             widget.initialQuery,
             useOnlineSearch:
                 ref.read(catalogSearchProvider(_scope)).useOnlineSearch,
+            useFuzzySearch:
+                ref.read(catalogSearchProvider(_scope)).useFuzzySearch,
           ),
     );
   }
@@ -133,6 +146,11 @@ class _MobileCatalogSearchPageState
           (value) => ref
               .read(catalogSearchProvider(_scope).notifier)
               .setUseOnlineSearch(value),
+      useFuzzySearch: searchState.useFuzzySearch,
+      onFuzzySearchToggle:
+          (value) => ref
+              .read(catalogSearchProvider(_scope).notifier)
+              .setUseFuzzySearch(value),
       onSubmitSearch: _submitSearch,
       onTabSelected:
           (index) => ref
@@ -172,9 +190,11 @@ class _MobileCatalogSearchPageState
   void _submitSearch() {
     final submittedQuery = _textController.text;
     final trimmedQuery = submittedQuery.trim();
+    final currentState = ref.read(catalogSearchProvider(_scope));
     final routeLocation = _routeLocationFor(
       query: submittedQuery,
-      useOnlineSearch: ref.read(catalogSearchProvider(_scope)).useOnlineSearch,
+      useOnlineSearch: currentState.useOnlineSearch,
+      useFuzzySearch: currentState.useFuzzySearch,
     );
     final currentLocation = _currentRouteLocationOr(routeLocation);
 
@@ -183,15 +203,15 @@ class _MobileCatalogSearchPageState
     }
 
     if (routeLocation == currentLocation &&
-        widget.initialUseOnlineSearch ==
-            ref.read(catalogSearchProvider(_scope)).useOnlineSearch) {
+        widget.initialUseOnlineSearch == currentState.useOnlineSearch &&
+        widget.initialUseFuzzySearch == currentState.useFuzzySearch) {
       unawaited(
         ref
             .read(catalogSearchProvider(_scope).notifier)
             .submit(
               submittedQuery,
-              useOnlineSearch:
-                  ref.read(catalogSearchProvider(_scope)).useOnlineSearch,
+              useOnlineSearch: currentState.useOnlineSearch,
+              useFuzzySearch: currentState.useFuzzySearch,
             ),
       );
       return;
@@ -199,14 +219,15 @@ class _MobileCatalogSearchPageState
 
     if (trimmedQuery.isEmpty) {
       MobileSearchRouteData(
-        useOnlineSearch:
-            ref.read(catalogSearchProvider(_scope)).useOnlineSearch,
+        useOnlineSearch: currentState.useOnlineSearch,
+        useFuzzySearch: currentState.useFuzzySearch,
       ).push(context);
       return;
     }
     MobileSearchQueryRouteData(
       query: trimmedQuery,
-      useOnlineSearch: ref.read(catalogSearchProvider(_scope)).useOnlineSearch,
+      useOnlineSearch: currentState.useOnlineSearch,
+      useFuzzySearch: currentState.useFuzzySearch,
     ).push(context);
   }
 
@@ -235,6 +256,7 @@ class _MobileCatalogSearchPageState
       _routeLocationFor(
         query: widget.initialQuery,
         useOnlineSearch: widget.initialUseOnlineSearch,
+        useFuzzySearch: widget.initialUseFuzzySearch,
       ),
     );
   }
@@ -250,14 +272,19 @@ class _MobileCatalogSearchPageState
   String _routeLocationFor({
     required String query,
     required bool useOnlineSearch,
+    required bool useFuzzySearch,
   }) {
     final trimmed = query.trim();
     if (trimmed.isEmpty) {
-      return MobileSearchRouteData(useOnlineSearch: useOnlineSearch).location;
+      return MobileSearchRouteData(
+        useOnlineSearch: useOnlineSearch,
+        useFuzzySearch: useFuzzySearch,
+      ).location;
     }
     return MobileSearchQueryRouteData(
       query: trimmed,
       useOnlineSearch: useOnlineSearch,
+      useFuzzySearch: useFuzzySearch,
     ).location;
   }
 }

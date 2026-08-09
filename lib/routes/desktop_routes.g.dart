@@ -814,6 +814,13 @@ mixin $DesktopSearchRouteData on GoRouteData {
               _$boolConverter,
             ) ??
             false,
+        useFuzzySearch:
+            _$convertMapValue(
+              'use-fuzzy-search',
+              state.uri.queryParameters,
+              _$boolConverter,
+            ) ??
+            false,
       );
 
   DesktopSearchRouteData get _self => this as DesktopSearchRouteData;
@@ -824,6 +831,8 @@ mixin $DesktopSearchRouteData on GoRouteData {
     queryParams: {
       if (_self.useOnlineSearch != false)
         'use-online-search': _self.useOnlineSearch.toString(),
+      if (_self.useFuzzySearch != false)
+        'use-fuzzy-search': _self.useFuzzySearch.toString(),
     },
   );
 
@@ -889,6 +898,13 @@ mixin $DesktopSearchQueryRouteData on GoRouteData {
               _$boolConverter,
             ) ??
             false,
+        useFuzzySearch:
+            _$convertMapValue(
+              'use-fuzzy-search',
+              state.uri.queryParameters,
+              _$boolConverter,
+            ) ??
+            false,
       );
 
   DesktopSearchQueryRouteData get _self => this as DesktopSearchQueryRouteData;
@@ -899,6 +915,8 @@ mixin $DesktopSearchQueryRouteData on GoRouteData {
     queryParams: {
       if (_self.useOnlineSearch != false)
         'use-online-search': _self.useOnlineSearch.toString(),
+      if (_self.useFuzzySearch != false)
+        'use-fuzzy-search': _self.useFuzzySearch.toString(),
     },
   );
 

@@ -50,16 +50,24 @@ class CatalogSearch extends _$CatalogSearch {
   void bootstrap({
     required String initialQuery,
     required bool initialUseOnlineSearch,
+    bool initialUseFuzzySearch = false,
   }) {
     if (state.hasBootstrapped) {
       return;
     }
     state = state.copyWith(
       useOnlineSearch: initialUseOnlineSearch,
+      useFuzzySearch: initialUseFuzzySearch,
       hasBootstrapped: true,
     );
     if (initialQuery.trim().isNotEmpty) {
-      unawaited(submit(initialQuery, useOnlineSearch: initialUseOnlineSearch));
+      unawaited(
+        submit(
+          initialQuery,
+          useOnlineSearch: initialUseOnlineSearch,
+          useFuzzySearch: initialUseFuzzySearch,
+        ),
+      );
     }
   }
 
@@ -70,8 +78,20 @@ class CatalogSearch extends _$CatalogSearch {
     state = state.copyWith(useOnlineSearch: value);
   }
 
-  Future<void> submit(String rawQuery, {required bool useOnlineSearch}) async {
+  void setUseFuzzySearch(bool value) {
+    if (state.useFuzzySearch == value) {
+      return;
+    }
+    state = state.copyWith(useFuzzySearch: value);
+  }
+
+  Future<void> submit(
+    String rawQuery, {
+    required bool useOnlineSearch,
+    bool? useFuzzySearch,
+  }) async {
     final trimmed = rawQuery.trim();
+    final resolvedUseFuzzySearch = useFuzzySearch ?? state.useFuzzySearch;
     await _cancelActiveSearch();
     if (_isDisposed) {
       return;
@@ -83,6 +103,7 @@ class CatalogSearch extends _$CatalogSearch {
         errorMessage: null,
         streamStatus: null,
         useOnlineSearch: useOnlineSearch,
+        useFuzzySearch: resolvedUseFuzzySearch,
       );
       return;
     }
@@ -93,9 +114,44 @@ class CatalogSearch extends _$CatalogSearch {
       isLoading: true,
       isOnlineSearchActive: useOnlineSearch,
       useOnlineSearch: useOnlineSearch,
+      useFuzzySearch: resolvedUseFuzzySearch,
       errorMessage: null,
       streamStatus: null,
     );
+
+    // 模糊搜索是独立于「番号解析 → 精确/在线搜索 → 女优搜索」的宽泛匹配语义：
+    // 直接对标题/中文标题/番号做子串匹配，固定落在影片 tab，不解析番号也不搜女优。
+    if (resolvedUseFuzzySearch) {
+      try {
+        final results = await ref
+            .read(moviesApiProvider)
+            .searchMoviesFuzzy(keyword: trimmed);
+        if (!_isCurrent(requestVersion)) {
+          return;
+        }
+        state = state.copyWith(
+          lastResolvedKind: CatalogSearchKind.movies,
+          activeKind: CatalogSearchKind.movies,
+          isOnlineSearchActive: false,
+          movieResults: results,
+          actorResults: const [],
+        );
+      } catch (error) {
+        if (!_isCurrent(requestVersion)) {
+          return;
+        }
+        state = state.copyWith(
+          movieResults: const [],
+          actorResults: const [],
+          errorMessage: apiErrorMessage(error, fallback: '搜索失败，请稍后重试'),
+        );
+      } finally {
+        if (_isCurrent(requestVersion)) {
+          state = state.copyWith(isLoading: false);
+        }
+      }
+      return;
+    }
 
     try {
       final parsed = await ref

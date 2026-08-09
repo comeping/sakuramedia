@@ -175,16 +175,21 @@ extension AppNavigationActions on BuildContext {
     required String query,
     String? fallbackPath,
     bool useOnlineSearch = false,
+    bool useFuzzySearch = false,
   }) {
     GoRouter.optionURLReflectsImperativeAPIs = true;
     final trimmed = query.trim();
     if (trimmed.isEmpty) {
-      DesktopSearchRouteData(useOnlineSearch: useOnlineSearch).push(this);
+      DesktopSearchRouteData(
+        useOnlineSearch: useOnlineSearch,
+        useFuzzySearch: useFuzzySearch,
+      ).push(this);
       return;
     }
     DesktopSearchQueryRouteData(
       query: trimmed,
       useOnlineSearch: useOnlineSearch,
+      useFuzzySearch: useFuzzySearch,
     ).push(this);
   }
 

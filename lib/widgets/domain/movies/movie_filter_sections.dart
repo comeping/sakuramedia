@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:sakuramedia/features/movies/presentation/controllers/listing/movie_filter_state.dart';
 import 'package:sakuramedia/theme.dart';
+import 'package:sakuramedia/widgets/base/actions/app_icon_button.dart';
 import 'package:sakuramedia/widgets/base/actions/app_text_button.dart';
+import 'package:sakuramedia/widgets/base/forms/app_text_field.dart';
 
-/// 影片筛选的所有 section（状态 / 合集类型 / 番号来源 / 年份 / 排序）的纵向 Column。
+/// 影片筛选的所有 section（关键词 / 状态 / 合集类型 / 番号来源 / 年份 / 排序）的纵向 Column。
 ///
 /// 桌面 `AppListHeader` 的就地浮层 panel 和移动 `MobileMovieFilterDrawer` 都用它，
 /// 避免双份维护。底栏/重置按钮由调用方自己附加。
@@ -37,6 +39,12 @@ class MovieFilterSectionGroup extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        MovieKeywordFilterSection(
+          keyword: filterState.keyword,
+          onSubmitted:
+              (value) => onChanged(filterState.copyWith(keyword: value)),
+        ),
+        SizedBox(height: context.appSpacing.lg),
         MovieFilterChoiceSection<MovieStatusFilter>(
           title: '状态筛选',
           options: MovieStatusFilter.values,
@@ -80,6 +88,85 @@ class MovieFilterSectionGroup extends StatelessWidget {
               (value) => onChanged(filterState.copyWith(sortField: value)),
           onSortDirectionChanged:
               (value) => onChanged(filterState.copyWith(sortDirection: value)),
+        ),
+      ],
+    );
+  }
+}
+
+/// 关键词模糊搜索：对标题 / 中文标题 / 番号做子串匹配（后端 `q` 参数）。
+///
+/// 提交后立即生效，与其它筛选项按 AND 关系组合；清空关键词并提交即可回退到
+/// 默认列表语义。用 [TextEditingController] 承载草稿，外部 `keyword`（如重置）
+/// 变化时才回写文本，避免打字过程中被外部状态覆盖。
+class MovieKeywordFilterSection extends StatefulWidget {
+  const MovieKeywordFilterSection({
+    super.key,
+    required this.keyword,
+    required this.onSubmitted,
+  });
+
+  final String keyword;
+  final ValueChanged<String> onSubmitted;
+
+  @override
+  State<MovieKeywordFilterSection> createState() =>
+      _MovieKeywordFilterSectionState();
+}
+
+class _MovieKeywordFilterSectionState
+    extends State<MovieKeywordFilterSection> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.keyword);
+  }
+
+  @override
+  void didUpdateWidget(covariant MovieKeywordFilterSection oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.keyword != oldWidget.keyword &&
+        widget.keyword != _controller.text) {
+      _controller.text = widget.keyword;
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _submit() => widget.onSubmitted(_controller.text.trim());
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '关键词搜索',
+          style: resolveAppTextStyle(
+            context,
+            size: AppTextSize.s14,
+            weight: AppTextWeight.regular,
+            tone: AppTextTone.primary,
+          ),
+        ),
+        SizedBox(height: context.appSpacing.sm),
+        AppTextField(
+          fieldKey: const Key('movie-filter-keyword-field'),
+          controller: _controller,
+          hintText: '按标题 / 中文标题 / 番号搜索',
+          textInputAction: TextInputAction.search,
+          onFieldSubmitted: (_) => _submit(),
+          suffix: AppIconButton(
+            key: const Key('movie-filter-keyword-submit'),
+            icon: const Icon(Icons.search_rounded),
+            onPressed: _submit,
+          ),
         ),
       ],
     );
