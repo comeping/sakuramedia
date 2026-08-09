@@ -69,13 +69,15 @@ class _CatalogSearchPageState extends ConsumerState<CatalogSearchPage>
     });
     _textController = TextEditingController(text: widget.initialQuery);
     _tabController = TabController(
-      length: 2,
+      length: 3,
       vsync: this,
-      initialIndex:
-          ref.read(catalogSearchProvider(_scope)).activeKind ==
-                  CatalogSearchKind.movies
-              ? 0
-              : 1,
+      initialIndex: switch (
+        ref.read(catalogSearchProvider(_scope)).activeKind
+      ) {
+        CatalogSearchKind.movies => 0,
+        CatalogSearchKind.actors => 1,
+        CatalogSearchKind.tags => 2,
+      },
     );
   }
 
@@ -132,7 +134,11 @@ class _CatalogSearchPageState extends ConsumerState<CatalogSearchPage>
     ref.listen(
       catalogSearchProvider(_scope).select((value) => value.activeKind),
       (_, nextKind) {
-        final nextIndex = nextKind == CatalogSearchKind.movies ? 0 : 1;
+        final nextIndex = switch (nextKind) {
+          CatalogSearchKind.movies => 0,
+          CatalogSearchKind.actors => 1,
+          CatalogSearchKind.tags => 2,
+        };
         if (_tabController.index != nextIndex) {
           _tabController.animateTo(nextIndex);
         }
@@ -157,6 +163,16 @@ class _CatalogSearchPageState extends ConsumerState<CatalogSearchPage>
           (index) => ref
               .read(catalogSearchProvider(_scope).notifier)
               .setActiveKind(_kindForIndex(index)),
+      tagSearchMovieType: searchState.tagSearchMovieType,
+      onTagSearchMovieTypeChanged:
+          (value) => ref
+              .read(catalogSearchProvider(_scope).notifier)
+              .setTagSearchMovieType(value),
+      tagSearchAutoImport: searchState.tagSearchAutoImport,
+      onTagSearchAutoImportChanged:
+          (value) => ref
+              .read(catalogSearchProvider(_scope).notifier)
+              .setTagSearchAutoImport(value),
       onMovieTap:
           (movie) =>
               context.pushDesktopMovieDetail(movieNumber: movie.movieNumber),
@@ -181,13 +197,34 @@ class _CatalogSearchPageState extends ConsumerState<CatalogSearchPage>
   }
 
   CatalogSearchKind _kindForIndex(int index) {
-    return index == 0 ? CatalogSearchKind.movies : CatalogSearchKind.actors;
+    return switch (index) {
+      0 => CatalogSearchKind.movies,
+      1 => CatalogSearchKind.actors,
+      2 => CatalogSearchKind.tags,
+      _ => CatalogSearchKind.movies,
+    };
   }
 
   void _submitSearch() {
     final submittedQuery = _textController.text;
     final trimmedQuery = submittedQuery.trim();
     final currentState = ref.read(catalogSearchProvider(_scope));
+
+    // 标签搜索：在标签 tab 下直接在当前页面执行 SSE 流式查询，
+    // 不推路由，因为搜索是一次性操作且参数较多（movieType / autoImport）。
+    if (currentState.activeKind == CatalogSearchKind.tags) {
+      unawaited(
+        ref
+            .read(catalogSearchProvider(_scope).notifier)
+            .submitTagSearch(
+              submittedQuery,
+              movieType: currentState.tagSearchMovieType,
+              autoImport: currentState.tagSearchAutoImport,
+            ),
+      );
+      return;
+    }
+
     final routeLocation = _routeLocationFor(
       query: submittedQuery,
       useOnlineSearch: currentState.useOnlineSearch,

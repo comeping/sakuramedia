@@ -2,8 +2,9 @@ import 'package:flutter/foundation.dart';
 import 'package:sakuramedia/features/actors/data/dto/actor_list_item_dto.dart';
 import 'package:sakuramedia/features/movies/data/dto/listing/movie_list_item_dto.dart';
 import 'package:sakuramedia/features/search/presentation/catalog_search_stream_status.dart';
+import 'package:sakuramedia/features/tags/data/tag_search_tag_dto.dart';
 
-enum CatalogSearchKind { movies, actors }
+enum CatalogSearchKind { movies, actors, tags }
 
 @immutable
 class CatalogSearchState {
@@ -19,6 +20,10 @@ class CatalogSearchState {
     this.streamStatus,
     this.movieResults = const <MovieListItemDto>[],
     this.actorResults = const <ActorListItemDto>[],
+    this.tagResults = const <MovieListItemDto>[],
+    this.foundTags = const <TagSearchTagDto>[],
+    this.tagSearchMovieType = 0,
+    this.tagSearchAutoImport = false,
     this.updatingMovieNumbers = const <String>{},
     this.updatingActorIds = const <int>{},
     this.hasBootstrapped = false,
@@ -37,6 +42,10 @@ class CatalogSearchState {
   final CatalogSearchStreamStatus? streamStatus;
   final List<MovieListItemDto> movieResults;
   final List<ActorListItemDto> actorResults;
+  final List<MovieListItemDto> tagResults;
+  final List<TagSearchTagDto> foundTags;
+  final int tagSearchMovieType;
+  final bool tagSearchAutoImport;
   final Set<String> updatingMovieNumbers;
   final Set<int> updatingActorIds;
   final bool hasBootstrapped;
@@ -59,6 +68,10 @@ class CatalogSearchState {
     Object? streamStatus = _sentinel,
     List<MovieListItemDto>? movieResults,
     List<ActorListItemDto>? actorResults,
+    List<MovieListItemDto>? tagResults,
+    List<TagSearchTagDto>? foundTags,
+    int? tagSearchMovieType,
+    bool? tagSearchAutoImport,
     Set<String>? updatingMovieNumbers,
     Set<int>? updatingActorIds,
     bool? hasBootstrapped,
@@ -88,6 +101,14 @@ class CatalogSearchState {
       actorResults: List<ActorListItemDto>.unmodifiable(
         actorResults ?? this.actorResults,
       ),
+      tagResults: List<MovieListItemDto>.unmodifiable(
+        tagResults ?? this.tagResults,
+      ),
+      foundTags: List<TagSearchTagDto>.unmodifiable(
+        foundTags ?? this.foundTags,
+      ),
+      tagSearchMovieType: tagSearchMovieType ?? this.tagSearchMovieType,
+      tagSearchAutoImport: tagSearchAutoImport ?? this.tagSearchAutoImport,
       updatingMovieNumbers: Set<String>.unmodifiable(
         updatingMovieNumbers ?? this.updatingMovieNumbers,
       ),

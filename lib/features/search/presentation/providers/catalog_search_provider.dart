@@ -12,6 +12,8 @@ import 'package:sakuramedia/features/movies/presentation/controllers/notifiers/m
 import 'package:sakuramedia/features/movies/presentation/providers/movies_api_provider.dart';
 import 'package:sakuramedia/features/movies/presentation/providers/mutation_events_provider.dart';
 import 'package:sakuramedia/features/search/presentation/catalog_search_stream_status.dart';
+import 'package:sakuramedia/features/tags/data/tag_search_stream_update.dart';
+import 'package:sakuramedia/features/tags/presentation/providers/tags_api_provider.dart';
 import 'package:sakuramedia/features/search/presentation/providers/catalog_search_scope.dart';
 import 'package:sakuramedia/features/search/presentation/providers/catalog_search_state.dart';
 
@@ -83,6 +85,20 @@ class CatalogSearch extends _$CatalogSearch {
       return;
     }
     state = state.copyWith(useFuzzySearch: value);
+  }
+
+  void setTagSearchMovieType(int value) {
+    if (state.tagSearchMovieType == value) {
+      return;
+    }
+    state = state.copyWith(tagSearchMovieType: value);
+  }
+
+  void setTagSearchAutoImport(bool value) {
+    if (state.tagSearchAutoImport == value) {
+      return;
+    }
+    state = state.copyWith(tagSearchAutoImport: value);
   }
 
   Future<void> submit(
@@ -219,6 +235,75 @@ class CatalogSearch extends _$CatalogSearch {
       );
     } finally {
       if (_isCurrent(requestVersion) && !state.isOnlineSearchActive) {
+        state = state.copyWith(isLoading: false);
+      }
+    }
+  }
+
+  /// 标签 JavDB 搜索（SSE 流式）。
+  ///
+  /// 仅在标签 tab 激活时调用，直接发 POST /tags/search/javdb/stream，
+  /// 不经过番号解析。查询为空时清空状态。
+  Future<void> submitTagSearch(
+    String rawQuery, {
+    required int movieType,
+    required bool autoImport,
+  }) async {
+    final trimmed = rawQuery.trim();
+    await _cancelActiveSearch();
+    if (_isDisposed) {
+      return;
+    }
+    if (trimmed.isEmpty) {
+      state = state.copyWith(
+        query: '',
+        isLoading: false,
+        errorMessage: null,
+        streamStatus: null,
+        tagResults: const [],
+        foundTags: const [],
+      );
+      return;
+    }
+
+    final requestVersion = ++_requestVersion;
+    state = state.copyWith(
+      query: trimmed,
+      activeKind: CatalogSearchKind.tags,
+      lastResolvedKind: CatalogSearchKind.tags,
+      isLoading: true,
+      isOnlineSearchActive: true,
+      useOnlineSearch: true,
+      useFuzzySearch: false,
+      errorMessage: null,
+      streamStatus: null,
+      tagResults: const [],
+      foundTags: const [],
+      movieResults: const [],
+      actorResults: const [],
+      tagSearchMovieType: movieType,
+      tagSearchAutoImport: autoImport,
+    );
+
+    try {
+      await _consumeTagOnlineSearch(
+        requestVersion: requestVersion,
+        tagName: trimmed,
+        movieType: movieType,
+        autoImport: autoImport,
+      );
+    } catch (error) {
+      if (!_isCurrent(requestVersion)) {
+        return;
+      }
+      state = state.copyWith(
+        tagResults: const [],
+        movieResults: const [],
+        actorResults: const [],
+        errorMessage: apiErrorMessage(error, fallback: '标签搜索失败，请稍后重试'),
+      );
+    } finally {
+      if (_isCurrent(requestVersion)) {
         state = state.copyWith(isLoading: false);
       }
     }
@@ -511,6 +596,85 @@ class CatalogSearch extends _$CatalogSearch {
       ),
     ]);
   }
+
+  Future<void> _consumeTagOnlineSearch({
+    required int requestVersion,
+    required String tagName,
+    required int movieType,
+    required bool autoImport,
+  }) async {
+    final completer = Completer<void>();
+    final subscription = ref
+        .read(tagsApiProvider)
+        .searchJavdbTagsStream(
+          tagName: tagName,
+          movieType: movieType,
+          autoImport: autoImport,
+        )
+        .listen(
+          (update) {
+            if (_isCurrent(requestVersion)) {
+              _applyTagSearchStreamUpdate(update);
+            }
+          },
+          onError: (Object error, StackTrace stackTrace) {
+            if (_isCurrent(requestVersion)) {
+              state = state.copyWith(
+                tagResults: const [],
+                movieResults: const [],
+                actorResults: const [],
+                errorMessage: apiErrorMessage(
+                  error,
+                  fallback: '标签搜索失败，请稍后重试',
+                ),
+                isLoading: false,
+              );
+            }
+            if (!completer.isCompleted) {
+              completer.complete();
+            }
+          },
+          onDone: () {
+            if (_isCurrent(requestVersion)) {
+              state = state.copyWith(isLoading: false);
+            }
+            if (!completer.isCompleted) {
+              completer.complete();
+            }
+          },
+          cancelOnError: false,
+        );
+    _activeSearchSubscription = subscription;
+    await completer.future;
+    if (identical(_activeSearchSubscription, subscription)) {
+      _activeSearchSubscription = null;
+    }
+  }
+
+  void _applyTagSearchStreamUpdate(TagSearchStreamUpdate update) {
+    state = state.copyWith(
+      streamStatus: CatalogSearchStreamStatus(
+        message: update.message,
+        isRunning: !update.isComplete,
+        isFailure:
+            update.isComplete &&
+            update.success == false &&
+            !_isTagNotFoundReason(update.reason),
+        current: update.current,
+        total: update.total,
+        stats: update.stats,
+      ),
+      tagResults: update.isComplete ? update.results : state.tagResults,
+      foundTags:
+          update.foundTags.isNotEmpty
+              ? update.foundTags
+              : state.foundTags,
+      errorMessage: update.isComplete ? null : state.errorMessage,
+    );
+  }
+
+  bool _isTagNotFoundReason(String? reason) =>
+      reason == 'tag_not_found' || reason == 'tag_movies_not_found';
 
   void _setMovieSubscriptionUpdating(String movieNumber, bool updating) {
     final next = Set<String>.of(state.updatingMovieNumbers);

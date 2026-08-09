@@ -8,16 +8,20 @@ import 'package:sakuramedia/features/movies/presentation/providers/movies_api_pr
 import 'package:sakuramedia/features/search/presentation/providers/catalog_search_provider.dart';
 import 'package:sakuramedia/features/search/presentation/providers/catalog_search_scope.dart';
 import 'package:sakuramedia/features/search/presentation/providers/catalog_search_state.dart';
+import 'package:sakuramedia/features/tags/data/tags_api.dart';
+import 'package:sakuramedia/features/tags/presentation/providers/tags_api_provider.dart';
 
 /// 让原控制器语义用 provider 实例验收的最小测试适配层。
 class CatalogSearchHarness {
   CatalogSearchHarness({
     required MoviesApi moviesApi,
     required ActorsApi actorsApi,
+    required TagsApi tagsApi,
   }) : _container = ProviderContainer(
          overrides: [
            moviesApiProvider.overrideWithValue(moviesApi),
            actorsApiProvider.overrideWithValue(actorsApi),
+           tagsApiProvider.overrideWithValue(tagsApi),
          ],
          retry: (_, __) => null,
        ) {
@@ -44,6 +48,7 @@ class CatalogSearchHarness {
   dynamic get streamStatus => _state.streamStatus;
   List get movieResults => _state.movieResults;
   List get actorResults => _state.actorResults;
+  List get tagResults => _state.tagResults;
 
   bool isMovieSubscriptionUpdating(String movieNumber) =>
       _state.isMovieSubscriptionUpdating(movieNumber);
@@ -55,6 +60,14 @@ class CatalogSearchHarness {
       _container
           .read(catalogSearchProvider(_scope).notifier)
           .submit(query, useOnlineSearch: useOnlineSearch);
+
+  Future<void> submitTagSearch(
+    String query, {
+    required int movieType,
+    required bool autoImport,
+  }) => _container
+      .read(catalogSearchProvider(_scope).notifier)
+      .submitTagSearch(query, movieType: movieType, autoImport: autoImport);
 
   void setActiveKind(CatalogSearchKind kind) => _container
       .read(catalogSearchProvider(_scope).notifier)

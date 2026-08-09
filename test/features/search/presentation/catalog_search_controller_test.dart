@@ -26,6 +26,7 @@ void main() {
     controller = CatalogSearchHarness(
       moviesApi: bundle.moviesApi,
       actorsApi: bundle.actorsApi,
+      tagsApi: bundle.tagsApi,
     );
   });
 
@@ -609,5 +610,78 @@ void main() {
     expect(controller.movieResults, isEmpty);
     expect(controller.actorResults, isEmpty);
     expect(controller.errorMessage, isNotNull);
+  });
+
+  group('submitTagSearch', () {
+    test('ignores blank query', () async {
+      await controller.submitTagSearch(
+        '   ',
+        movieType: 0,
+        autoImport: false,
+      );
+
+      expect(bundle.adapter.requests, isEmpty);
+      expect(controller.tagResults, isEmpty);
+      expect(controller.isLoading, isFalse);
+    });
+
+    test('consumes tag SSE stream and exposes results', () async {
+      bundle.adapter.enqueueSse(
+        method: 'POST',
+        path: '/tags/search/javdb/stream',
+        chunks: <String>[
+          'event: search_started\n'
+              'data: {"tag_name":"HDTV","movie_type":0,"auto_import":false}\n'
+              '\n',
+          'event: tag_found\n'
+              'data: {"tags":[{"javdb_id":"335","name":"HDTV","category_id":"category","category_name":"類別","movie_type":0}],"total":1}\n'
+              '\n',
+          'event: movie_found\n'
+              'data: {"movies":[{"javdb_id":"abc123","movie_number":"RD-1366","title":"影片标题","cover_image":null,"release_date":"2026-08-01"}],"total":1}\n'
+              '\n',
+          'event: completed\n'
+              'data: {"success":true,"movies":[{"javdb_id":"abc123","movie_number":"RD-1366","title":"影片标题","cover_image":null,"release_date":"2026-08-01"}],"stats":{"total":1}}\n'
+              '\n',
+        ],
+      );
+
+      await controller.submitTagSearch(
+        'HDTV',
+        movieType: 0,
+        autoImport: false,
+      );
+
+      expect(
+        bundle.adapter.hitCount('POST', '/tags/search/javdb/stream'),
+        1,
+      );
+      expect(controller.activeKind, CatalogSearchKind.tags);
+      expect(controller.tagResults.single.movieNumber, 'RD-1366');
+      expect(controller.isLoading, isFalse);
+      expect(controller.errorMessage, isNull);
+    });
+
+    test('handles tag_not_found gracefully', () async {
+      bundle.adapter.enqueueSse(
+        method: 'POST',
+        path: '/tags/search/javdb/stream',
+        chunks: <String>[
+          'event: completed\n'
+              'data: {"success":false,"reason":"tag_not_found"}\n\n',
+        ],
+      );
+
+      await controller.submitTagSearch(
+        'NonExistent',
+        movieType: 0,
+        autoImport: false,
+      );
+
+      expect(controller.tagResults, isEmpty);
+      expect(controller.isLoading, isFalse);
+      // tag_not_found 不视为致命错误（不弹出 errorMessage），
+      // 而是交由 UI 的 emptyMessage 展示。
+      expect(controller.errorMessage, isNull);
+    });
   });
 }

@@ -4,6 +4,7 @@ import 'package:sakuramedia/features/movies/data/dto/listing/movie_list_item_dto
 import 'package:sakuramedia/features/search/presentation/providers/catalog_search_state.dart';
 import 'package:sakuramedia/theme.dart';
 import 'package:sakuramedia/widgets/base/actions/app_button.dart';
+import 'package:sakuramedia/widgets/base/actions/app_text_button.dart';
 import 'package:sakuramedia/widgets/domain/actors/actor_summary_grid.dart';
 import 'package:sakuramedia/widgets/base/feedback/app_empty_state.dart';
 import 'package:sakuramedia/widgets/domain/movies/movie_summary_grid.dart';
@@ -29,6 +30,10 @@ class CatalogSearchContent extends StatelessWidget {
     required this.onMovieSubscriptionTap,
     required this.onActorSubscriptionTap,
     this.onFallbackToOnlineSearch,
+    this.tagSearchMovieType = 0,
+    this.onTagSearchMovieTypeChanged,
+    this.tagSearchAutoImport = false,
+    this.onTagSearchAutoImportChanged,
   });
 
   final CatalogSearchState state;
@@ -50,6 +55,14 @@ class CatalogSearchContent extends StatelessWidget {
   final ValueChanged<ActorListItemDto> onActorSubscriptionTap;
   final VoidCallback? onFallbackToOnlineSearch;
 
+  /// 标签搜索：影片类型（0=一般 / 1=有码 / 2=无码欧美）。
+  final int tagSearchMovieType;
+  final ValueChanged<int>? onTagSearchMovieTypeChanged;
+
+  /// 标签搜索：搜索后是否自动导入落库。
+  final bool tagSearchAutoImport;
+  final ValueChanged<bool>? onTagSearchAutoImportChanged;
+
   @override
   Widget build(BuildContext context) {
     return Material(
@@ -69,7 +82,9 @@ class CatalogSearchContent extends StatelessWidget {
                   ),
                   fuzzyToggleKey: const Key('catalog-search-page-fuzzy-toggle'),
                   controller: textController,
-                  hintText: '如 SSNI-888、三上悠亚',
+                  hintText: state.activeKind == CatalogSearchKind.tags
+                      ? '如 HDTV、可播放、高畫質'
+                      : '如 SSNI-888、三上悠亚',
                   showOnlineToggle: true,
                   isOnlineSearchEnabled: useOnlineSearch,
                   onOnlineSearchToggle: onOnlineSearchToggle,
@@ -87,8 +102,21 @@ class CatalogSearchContent extends StatelessWidget {
                 AppTabBar(
                   controller: tabController,
                   onTap: onTabSelected,
-                  tabs: const [Tab(text: '影片'), Tab(text: '女优')],
+                  tabs: const [
+                    Tab(text: '影片'),
+                    Tab(text: '女优'),
+                    Tab(text: '标签'),
+                  ],
                 ),
+                if (state.activeKind == CatalogSearchKind.tags) ...[
+                  SizedBox(height: context.appSpacing.sm),
+                  _TagSearchOptionsBar(
+                    movieType: tagSearchMovieType,
+                    onMovieTypeChanged: onTagSearchMovieTypeChanged,
+                    autoImport: tagSearchAutoImport,
+                    onAutoImportChanged: onTagSearchAutoImportChanged,
+                  ),
+                ],
                 SizedBox(height: context.appSpacing.lg),
               ],
             ),
@@ -153,6 +181,20 @@ class CatalogSearchContent extends StatelessWidget {
           onActorSubscriptionTap: onActorSubscriptionTap,
           isActorSubscriptionUpdating:
               (actor) => state.isActorSubscriptionUpdating(actor.id),
+        );
+      case CatalogSearchKind.tags:
+        return MovieSummarySliver(
+          items: state.tagResults,
+          isLoading: false,
+          emptyMessage:
+              state.isOnlineSearchActive
+                  ? '在线源未找到匹配该标签的影片'
+                  : '标签下暂无影片',
+          onMovieTap: onMovieTap,
+          onMovieMenuRequest: onMovieMenuRequest,
+          onMovieSubscriptionTap: onMovieSubscriptionTap,
+          isMovieSubscriptionUpdating:
+              (movie) => state.isMovieSubscriptionUpdating(movie.movieNumber),
         );
     }
   }
@@ -220,6 +262,68 @@ class _CatalogSearchOnlineFallback extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _TagSearchOptionsBar extends StatelessWidget {
+  const _TagSearchOptionsBar({
+    required this.movieType,
+    required this.onMovieTypeChanged,
+    required this.autoImport,
+    required this.onAutoImportChanged,
+  });
+
+  final int movieType;
+  final ValueChanged<int>? onMovieTypeChanged;
+  final bool autoImport;
+  final ValueChanged<bool>? onAutoImportChanged;
+
+  static const List<(String, int)> _movieTypeOptions = [
+    ('一般', 0),
+    ('有码', 1),
+    ('无码/欧美', 2),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final spacing = context.appSpacing;
+    final labelStyle = resolveAppTextStyle(
+      context,
+      size: AppTextSize.s12,
+      weight: AppTextWeight.regular,
+      tone: AppTextTone.secondary,
+    );
+    return Wrap(
+      spacing: spacing.md,
+      runSpacing: spacing.sm,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        Text('影片类型', style: labelStyle),
+        for (final option in _movieTypeOptions)
+          AppTextButton(
+            key: Key('tag-search-movie-type-${option.$2}'),
+            label: option.$1,
+            size: AppTextButtonSize.xSmall,
+            isSelected: movieType == option.$2,
+            onPressed:
+                onMovieTypeChanged != null
+                    ? () => onMovieTypeChanged!(option.$2)
+                    : null,
+          ),
+        SizedBox(width: spacing.xs),
+        Text('自动导入', style: labelStyle),
+        AppTextButton(
+          key: const Key('tag-search-auto-import'),
+          label: '搜索后导入',
+          size: AppTextButtonSize.xSmall,
+          isSelected: autoImport,
+          onPressed:
+              onAutoImportChanged != null
+                  ? () => onAutoImportChanged!(!autoImport)
+                  : null,
+        ),
+      ],
     );
   }
 }
