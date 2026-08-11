@@ -104,7 +104,7 @@ jobs:
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.0.0
+          tag_name: v1.0.2
           name: sakuramedia ${{ github.ref_name }}
           # Keep release notes generation in macOS workflow only to avoid duplicate
           # "What's Changed" sections when multiple workflows publish the same tag.
