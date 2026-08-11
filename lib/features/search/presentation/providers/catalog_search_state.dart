@@ -27,6 +27,7 @@ class CatalogSearchState {
     this.updatingMovieNumbers = const <String>{},
     this.updatingActorIds = const <int>{},
     this.hasBootstrapped = false,
+    this.fuzzySearchTotal,
   });
 
   static const CatalogSearchState initial = CatalogSearchState();
@@ -50,6 +51,9 @@ class CatalogSearchState {
   final Set<int> updatingActorIds;
   final bool hasBootstrapped;
 
+  /// 模糊搜索结果总数，供 UI 显示"共 X 部"。null 表示未启用模糊搜索或无数据。
+  final int? fuzzySearchTotal;
+
   bool isMovieSubscriptionUpdating(String movieNumber) =>
       updatingMovieNumbers.contains(movieNumber);
 
@@ -64,6 +68,7 @@ class CatalogSearchState {
     bool? isOnlineSearchActive,
     bool? useOnlineSearch,
     bool? useFuzzySearch,
+    Object? fuzzySearchTotal = _sentinel,
     Object? errorMessage = _sentinel,
     Object? streamStatus = _sentinel,
     List<MovieListItemDto>? movieResults,
@@ -87,6 +92,10 @@ class CatalogSearchState {
       isOnlineSearchActive: isOnlineSearchActive ?? this.isOnlineSearchActive,
       useOnlineSearch: useOnlineSearch ?? this.useOnlineSearch,
       useFuzzySearch: useFuzzySearch ?? this.useFuzzySearch,
+      fuzzySearchTotal:
+          identical(fuzzySearchTotal, _sentinel)
+              ? this.fuzzySearchTotal
+              : fuzzySearchTotal as int?,
       errorMessage:
           identical(errorMessage, _sentinel)
               ? this.errorMessage

@@ -121,6 +121,22 @@ class CatalogSearchContent extends StatelessWidget {
               ],
             ),
           ),
+          if (state.useFuzzySearch && state.fuzzySearchTotal != null)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.only(bottom: context.appSpacing.sm),
+                child: Text(
+                  '共 ${state.fuzzySearchTotal} 部',
+                  key: const Key('catalog-search-fuzzy-total'),
+                  style: resolveAppTextStyle(
+                    context,
+                    size: AppTextSize.s12,
+                    weight: AppTextWeight.regular,
+                    tone: AppTextTone.muted,
+                  ),
+                ),
+              ),
+            ),
           _buildBodySliver(context),
         ],
       ),

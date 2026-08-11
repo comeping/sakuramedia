@@ -30,6 +30,9 @@ class CatalogSearch extends _$CatalogSearch {
   int _requestVersion = 0;
   bool _isDisposed = false;
 
+  /// 模糊搜索时本地结果缓存，开启在线搜索时保留以便与在线结果合并。
+  List<MovieListItemDto>? _fuzzyLocalResults;
+
   KeepAliveLink? get cacheLink => _cacheLink;
 
   @override
@@ -120,6 +123,7 @@ class CatalogSearch extends _$CatalogSearch {
         streamStatus: null,
         useOnlineSearch: useOnlineSearch,
         useFuzzySearch: resolvedUseFuzzySearch,
+        fuzzySearchTotal: null,
       );
       return;
     }
@@ -135,34 +139,55 @@ class CatalogSearch extends _$CatalogSearch {
       streamStatus: null,
     );
 
-    // 模糊搜索是独立于「番号解析 → 精确/在线搜索 → 女优搜索」的宽泛匹配语义：
-    // 直接对标题/中文标题/番号做子串匹配，固定落在影片 tab，不解析番号也不搜女优。
+    // 模糊搜索：本地 ILIKE 子串匹配，开启在线搜索时追加 JavDB 搜索。
     if (resolvedUseFuzzySearch) {
       try {
-        final results = await ref
+        final paginated = await ref
             .read(moviesApiProvider)
             .searchMoviesFuzzy(keyword: trimmed);
         if (!_isCurrent(requestVersion)) {
           return;
         }
+        _fuzzyLocalResults = paginated.items;
         state = state.copyWith(
           lastResolvedKind: CatalogSearchKind.movies,
           activeKind: CatalogSearchKind.movies,
-          isOnlineSearchActive: false,
-          movieResults: results,
+          isOnlineSearchActive: useOnlineSearch,
+          movieResults: paginated.items,
           actorResults: const [],
+          fuzzySearchTotal: paginated.total,
         );
+
+        if (useOnlineSearch) {
+          state = state.copyWith(
+            streamStatus: const CatalogSearchStreamStatus(
+              message: '正在从外部数据源搜索影片',
+              isRunning: true,
+              isFailure: false,
+            ),
+          );
+          await _consumeMovieOnlineSearch(
+            requestVersion: requestVersion,
+            movieNumber: trimmed,
+          );
+          _fuzzyLocalResults = null;
+        } else {
+          state = state.copyWith(isLoading: false);
+        }
       } catch (error) {
         if (!_isCurrent(requestVersion)) {
           return;
         }
+        _fuzzyLocalResults = null;
         state = state.copyWith(
           movieResults: const [],
           actorResults: const [],
+          fuzzySearchTotal: null,
+          isOnlineSearchActive: false,
           errorMessage: apiErrorMessage(error, fallback: '搜索失败，请稍后重试'),
         );
       } finally {
-        if (_isCurrent(requestVersion)) {
+        if (_isCurrent(requestVersion) && !useOnlineSearch) {
           state = state.copyWith(isLoading: false);
         }
       }
@@ -539,6 +564,10 @@ class CatalogSearch extends _$CatalogSearch {
   }
 
   void _applyMovieSearchStreamUpdate(MovieSearchStreamUpdate update) {
+    final localResults = _fuzzyLocalResults;
+    final mergedResults = update.isComplete && localResults != null
+        ? _mergeDedupMovieLists(localResults, update.results)
+        : null;
     state = state.copyWith(
       streamStatus: CatalogSearchStreamStatus(
         message: update.message,
@@ -551,10 +580,29 @@ class CatalogSearch extends _$CatalogSearch {
         total: update.total,
         stats: update.stats,
       ),
-      movieResults: update.isComplete ? update.results : null,
+      movieResults: update.isComplete ? (mergedResults ?? update.results) : null,
       actorResults: update.isComplete ? const [] : null,
       errorMessage: update.isComplete ? null : state.errorMessage,
     );
+  }
+
+  /// 合并本地模糊搜索结果与在线搜索结果，按番号去重（本地结果优先）。
+  static List<MovieListItemDto> _mergeDedupMovieLists(
+    List<MovieListItemDto> local,
+    List<MovieListItemDto> online,
+  ) {
+    final seen = <String>{};
+    final merged = <MovieListItemDto>[];
+    for (final movie in local) {
+      seen.add(movie.movieNumber);
+      merged.add(movie);
+    }
+    for (final movie in online) {
+      if (seen.add(movie.movieNumber)) {
+        merged.add(movie);
+      }
+    }
+    return merged;
   }
 
   void _applyActorSearchStreamUpdate(ActorSearchStreamUpdate update) {

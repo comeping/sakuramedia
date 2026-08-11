@@ -82,17 +82,17 @@ class MoviesApi {
   /// 目录搜索页在开启「模糊搜索」时使用，跳过番号解析 + 精确/在线搜索流程，
   /// 直接把关键词交给后端做宽泛匹配；语义与影片库筛选器的 `keyword` 完全一致，
   /// 这里只是给搜索页一个语义更直白的入口。
-  Future<List<MovieListItemDto>> searchMoviesFuzzy({
+  /// 返回 `PaginatedResponseDto` 以便调用方读取 `total`，展示"共 X 部"等分页信息。
+  Future<PaginatedResponseDto<MovieListItemDto>> searchMoviesFuzzy({
     required String keyword,
     int page = 1,
     int pageSize = 20,
   }) async {
-    final result = await getMovies(
+    return getMovies(
       keyword: keyword,
       page: page,
       pageSize: pageSize,
     );
-    return result.items;
   }
 
   Future<PaginatedResponseDto<MovieListItemDto>> getLatestMovies({
