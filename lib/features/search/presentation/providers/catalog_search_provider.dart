@@ -231,7 +231,8 @@ class CatalogSearch extends _$CatalogSearch {
           }
           state = state.copyWith(movieResults: results, actorResults: const []);
         }
-      } else {
+      } else if (state.activeKind == CatalogSearchKind.actors) {
+        // 女优 tab：保持 javdb 在线搜索（不变）
         state = state.copyWith(
           lastResolvedKind: CatalogSearchKind.actors,
           activeKind: CatalogSearchKind.actors,
@@ -249,6 +250,33 @@ class CatalogSearch extends _$CatalogSearch {
           requestVersion: requestVersion,
           actorName: trimmed,
         );
+      } else {
+        // 影片 tab 且非有效番号 → 回退到本地模糊搜索
+        // （title / title_zh / movie_number ILIKE 匹配）
+        try {
+          final paginated = await ref
+              .read(moviesApiProvider)
+              .searchMoviesFuzzy(keyword: trimmed);
+          if (!_isCurrent(requestVersion)) return;
+          state = state.copyWith(
+            lastResolvedKind: CatalogSearchKind.movies,
+            activeKind: CatalogSearchKind.movies,
+            isOnlineSearchActive: false,
+            movieResults: paginated.items,
+            actorResults: const [],
+            fuzzySearchTotal: paginated.total,
+            isLoading: false,
+          );
+        } catch (fuzzyError) {
+          if (!_isCurrent(requestVersion)) return;
+          state = state.copyWith(
+            movieResults: const [],
+            actorResults: const [],
+            isLoading: false,
+            errorMessage:
+                apiErrorMessage(fuzzyError, fallback: '搜索失败，请稍后重试'),
+          );
+        }
       }
     } catch (error) {
       if (!_isCurrent(requestVersion)) {
