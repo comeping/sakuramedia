@@ -193,6 +193,8 @@ class _CatalogSearchPageState extends ConsumerState<CatalogSearchPage>
             .setUseOnlineSearch(true);
         _submitSearch();
       },
+      onLoadMoreFuzzy: () =>
+          ref.read(catalogSearchProvider(_scope).notifier).loadMoreFuzzyResults(),
     );
   }
 

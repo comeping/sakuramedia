@@ -30,6 +30,7 @@ class CatalogSearchContent extends StatelessWidget {
     required this.onMovieSubscriptionTap,
     required this.onActorSubscriptionTap,
     this.onFallbackToOnlineSearch,
+    this.onLoadMoreFuzzy,
     this.tagSearchMovieType = 0,
     this.onTagSearchMovieTypeChanged,
     this.tagSearchAutoImport = false,
@@ -55,6 +56,9 @@ class CatalogSearchContent extends StatelessWidget {
   final ValueChanged<ActorListItemDto> onActorSubscriptionTap;
   final VoidCallback? onFallbackToOnlineSearch;
 
+  /// 模糊搜索翻页：滚动到底时触发加载下一页。
+  final VoidCallback? onLoadMoreFuzzy;
+
   /// 标签搜索：影片类型（0=一般 / 1=有码 / 2=无码欧美）。
   final int tagSearchMovieType;
   final ValueChanged<int>? onTagSearchMovieTypeChanged;
@@ -67,10 +71,18 @@ class CatalogSearchContent extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: context.appColors.surfaceElevated,
-      child: CustomScrollView(
-        slivers: [
-          SliverToBoxAdapter(
-            child: Column(
+      child: NotificationListener<ScrollNotification>(
+        onNotification: (notification) {
+          if (notification is ScrollEndNotification &&
+              notification.metrics.extentAfter < 200) {
+            onLoadMoreFuzzy?.call();
+          }
+          return false;
+        },
+        child: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(
+              child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 CatalogSearchField(
@@ -138,7 +150,17 @@ class CatalogSearchContent extends StatelessWidget {
               ),
             ),
           _buildBodySliver(context),
+          if (state.isLoadingMoreFuzzy)
+            const SliverToBoxAdapter(
+              child: Center(
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: CircularProgressIndicator.adaptive(strokeWidth: 2),
+                ),
+              ),
+            ),
         ],
+      ),
       ),
     );
   }

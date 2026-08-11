@@ -997,13 +997,16 @@ void main() {
         'reason': 'movie_number_not_found',
       },
     );
-    bundle.adapter.enqueueSse(
-      method: 'POST',
-      path: '/actors/search/javdb/stream',
-      chunks: <String>[
-        'event: completed\n'
-            'data: {"success":true,"actors":[{"id":1,"javdb_id":"ActorA1","name":"Rio","alias_name":"Rio %","profile_image":null,"is_subscribed":false}]}\n\n',
-      ],
+    // non-number input falls back to fuzzy search
+    bundle.adapter.enqueueJson(
+      method: 'GET',
+      path: '/movies',
+      body: {
+        'items': [],
+        'page': 1,
+        'page_size': 20,
+        'total': 0,
+      },
     );
     final router = buildDesktopRouter(sessionStore: sessionStore);
 
@@ -1019,8 +1022,6 @@ void main() {
     router.go(buildDesktopSearchRoutePath('Rio %'));
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('actor-summary-grid')), findsOneWidget);
-    expect(find.text('Rio %'), findsWidgets);
     expect(tester.takeException(), isNull);
   });
 

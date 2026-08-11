@@ -102,6 +102,7 @@ void main() {
       ],
     );
 
+    controller.setActiveKind(CatalogSearchKind.actors);
     await controller.submit('mikami', useOnlineSearch: false);
 
     expect(bundle.adapter.hitCount('POST', '/movies/search/parse-number'), 1);
@@ -279,6 +280,7 @@ void main() {
       statusCode: 204,
     );
 
+    controller.setActiveKind(CatalogSearchKind.actors);
     await controller.submit('mikami', useOnlineSearch: false);
     final result = await controller.toggleActorSubscription(actorId: 1);
 
@@ -474,6 +476,7 @@ void main() {
         ],
       );
 
+    controller.setActiveKind(CatalogSearchKind.actors);
       await controller.submit('mikami', useOnlineSearch: true);
 
       expect(bundle.adapter.hitCount('POST', '/actors/search/javdb/stream'), 1);
@@ -526,7 +529,9 @@ void main() {
         ],
       );
 
+    controller.setActiveKind(CatalogSearchKind.actors);
       await controller.submit('mikami', useOnlineSearch: true);
+    controller.setActiveKind(CatalogSearchKind.actors);
       await controller.submit('mikami', useOnlineSearch: true);
 
       expect(bundle.adapter.hitCount('POST', '/movies/search/parse-number'), 2);
@@ -576,6 +581,7 @@ void main() {
       );
 
       await controller.submit('abp123', useOnlineSearch: true);
+    controller.setActiveKind(CatalogSearchKind.actors);
       await controller.submit('mikami', useOnlineSearch: false);
 
       expect(controller.query, 'mikami');

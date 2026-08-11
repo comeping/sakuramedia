@@ -157,6 +157,7 @@ class CatalogSearch extends _$CatalogSearch {
           movieResults: paginated.items,
           actorResults: const [],
           fuzzySearchTotal: paginated.total,
+          fuzzySearchPage: 1,
         );
 
         if (useOnlineSearch) {
@@ -265,6 +266,7 @@ class CatalogSearch extends _$CatalogSearch {
             movieResults: paginated.items,
             actorResults: const [],
             fuzzySearchTotal: paginated.total,
+            fuzzySearchPage: 1,
             isLoading: false,
           );
         } catch (fuzzyError) {
@@ -291,6 +293,29 @@ class CatalogSearch extends _$CatalogSearch {
       if (_isCurrent(requestVersion) && !state.isOnlineSearchActive) {
         state = state.copyWith(isLoading: false);
       }
+    }
+  }
+
+  /// 模糊搜索翻页：加载下一页结果并追加到 movieResults。
+  Future<void> loadMoreFuzzyResults() async {
+    if (state.isLoadingMoreFuzzy) return;
+    final total = state.fuzzySearchTotal ?? 0;
+    if (state.movieResults.length >= total) return;
+
+    final nextPage = state.fuzzySearchPage + 1;
+    state = state.copyWith(isLoadingMoreFuzzy: true);
+
+    try {
+      final paginated = await ref
+          .read(moviesApiProvider)
+          .searchMoviesFuzzy(keyword: state.query, page: nextPage);
+      state = state.copyWith(
+        movieResults: [...state.movieResults, ...paginated.items],
+        fuzzySearchPage: nextPage,
+        isLoadingMoreFuzzy: false,
+      );
+    } catch (_) {
+      state = state.copyWith(isLoadingMoreFuzzy: false);
     }
   }
 

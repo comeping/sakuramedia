@@ -28,6 +28,8 @@ class CatalogSearchState {
     this.updatingActorIds = const <int>{},
     this.hasBootstrapped = false,
     this.fuzzySearchTotal,
+    this.fuzzySearchPage = 1,
+    this.isLoadingMoreFuzzy = false,
   });
 
   static const CatalogSearchState initial = CatalogSearchState();
@@ -54,6 +56,12 @@ class CatalogSearchState {
   /// 模糊搜索结果总数，供 UI 显示"共 X 部"。null 表示未启用模糊搜索或无数据。
   final int? fuzzySearchTotal;
 
+  /// 模糊搜索当前页码（从 1 开始），用于翻页加载更多。
+  final int fuzzySearchPage;
+
+  /// 是否正在加载更多模糊搜索结果（翻页中）。
+  final bool isLoadingMoreFuzzy;
+
   bool isMovieSubscriptionUpdating(String movieNumber) =>
       updatingMovieNumbers.contains(movieNumber);
 
@@ -69,6 +77,8 @@ class CatalogSearchState {
     bool? useOnlineSearch,
     bool? useFuzzySearch,
     Object? fuzzySearchTotal = _sentinel,
+    int? fuzzySearchPage,
+    bool? isLoadingMoreFuzzy,
     Object? errorMessage = _sentinel,
     Object? streamStatus = _sentinel,
     List<MovieListItemDto>? movieResults,
@@ -125,6 +135,8 @@ class CatalogSearchState {
         updatingActorIds ?? this.updatingActorIds,
       ),
       hasBootstrapped: hasBootstrapped ?? this.hasBootstrapped,
+      fuzzySearchPage: fuzzySearchPage ?? this.fuzzySearchPage,
+      isLoadingMoreFuzzy: isLoadingMoreFuzzy ?? this.isLoadingMoreFuzzy,
     );
   }
 }

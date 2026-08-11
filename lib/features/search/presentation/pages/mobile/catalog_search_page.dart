@@ -196,6 +196,8 @@ class _MobileCatalogSearchPageState
             .setUseOnlineSearch(true);
         _submitSearch();
       },
+      onLoadMoreFuzzy: () =>
+          ref.read(catalogSearchProvider(_scope).notifier).loadMoreFuzzyResults(),
     );
   }
 
