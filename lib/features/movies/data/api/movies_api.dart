@@ -305,6 +305,17 @@ class MoviesApi {
         .map(_mapMovieSearchStreamEvent);
   }
 
+  Stream<MovieSearchStreamUpdate> searchOnlineMoviesByKeywordStream({
+    required String keyword,
+  }) {
+    return _apiClient
+        .postSse(
+          '/movies/search/javdb/keyword/stream',
+          data: <String, dynamic>{'keyword': keyword},
+        )
+        .map(_mapMovieSearchStreamEvent);
+  }
+
   Future<void> subscribeMovie({required String movieNumber}) {
     return _apiClient.putNoContent('/movies/$movieNumber/subscription');
   }

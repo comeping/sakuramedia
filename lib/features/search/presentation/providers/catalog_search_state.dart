@@ -16,6 +16,7 @@ class CatalogSearchState {
     this.isOnlineSearchActive = false,
     this.useOnlineSearch = false,
     this.useFuzzySearch = false,
+    this.useKeywordSearch = false,
     this.errorMessage,
     this.streamStatus,
     this.movieResults = const <MovieListItemDto>[],
@@ -41,6 +42,9 @@ class CatalogSearchState {
   final bool isOnlineSearchActive;
   final bool useOnlineSearch;
   final bool useFuzzySearch;
+
+  /// 关键词搜索开关：模糊搜索 + 联网时用关键词搜 javdb（不过滤番号）。
+  final bool useKeywordSearch;
   final String? errorMessage;
   final CatalogSearchStreamStatus? streamStatus;
   final List<MovieListItemDto> movieResults;
@@ -76,6 +80,7 @@ class CatalogSearchState {
     bool? isOnlineSearchActive,
     bool? useOnlineSearch,
     bool? useFuzzySearch,
+    bool? useKeywordSearch,
     Object? fuzzySearchTotal = _sentinel,
     int? fuzzySearchPage,
     bool? isLoadingMoreFuzzy,
@@ -102,6 +107,7 @@ class CatalogSearchState {
       isOnlineSearchActive: isOnlineSearchActive ?? this.isOnlineSearchActive,
       useOnlineSearch: useOnlineSearch ?? this.useOnlineSearch,
       useFuzzySearch: useFuzzySearch ?? this.useFuzzySearch,
+      useKeywordSearch: useKeywordSearch ?? this.useKeywordSearch,
       fuzzySearchTotal:
           identical(fuzzySearchTotal, _sentinel)
               ? this.fuzzySearchTotal

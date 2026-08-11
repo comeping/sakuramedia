@@ -23,6 +23,10 @@ class CatalogSearchField extends StatelessWidget {
     this.showFuzzyToggle = false,
     this.isFuzzySearchEnabled = false,
     this.onFuzzySearchToggle,
+    /// 关键词搜索开关：模糊搜索 + 联网时用关键词搜 javdb（不过滤番号）。
+    this.showKeywordToggle = false,
+    this.isKeywordSearchEnabled = false,
+    this.onKeywordSearchToggle,
     this.fillColor,
   });
 
@@ -46,6 +50,11 @@ class CatalogSearchField extends StatelessWidget {
   final bool showFuzzyToggle;
   final bool isFuzzySearchEnabled;
   final ValueChanged<bool>? onFuzzySearchToggle;
+
+  /// 关键词搜索开关：开启后模糊搜索 + 联网时发关键词到 javdb。
+  final bool showKeywordToggle;
+  final bool isKeywordSearchEnabled;
+  final ValueChanged<bool>? onKeywordSearchToggle;
 
   /// 覆盖默认的填充色；用于把搜索框放到比 `surfaceMuted` 更暗的面板（如侧边栏）上时提升对比。
   final Color? fillColor;
@@ -89,6 +98,17 @@ class CatalogSearchField extends StatelessWidget {
                   onFuzzySearchToggle == null
                       ? null
                       : () => onFuzzySearchToggle!(!isFuzzySearchEnabled),
+            ),
+          if (showKeywordToggle)
+            AppIconButton(
+              key: const Key('catalog-search-page-keyword-toggle'),
+              tooltip: '关键词搜索',
+              icon: const Icon(Icons.vpn_key_rounded),
+              isSelected: isKeywordSearchEnabled,
+              onPressed:
+                  onKeywordSearchToggle == null
+                      ? null
+                      : () => onKeywordSearchToggle!(!isKeywordSearchEnabled),
             ),
           AppIconButton(
             key: searchButtonKey,

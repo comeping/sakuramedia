@@ -158,6 +158,11 @@ class _CatalogSearchPageState extends ConsumerState<CatalogSearchPage>
           (value) => ref
               .read(catalogSearchProvider(_scope).notifier)
               .setUseFuzzySearch(value),
+      useKeywordSearch: searchState.useKeywordSearch,
+      onKeywordSearchToggle:
+          (value) => ref
+              .read(catalogSearchProvider(_scope).notifier)
+              .setUseKeywordSearch(value),
       onSubmitSearch: _submitSearch,
       onTabSelected:
           (index) => ref

@@ -91,6 +91,13 @@ class CatalogSearch extends _$CatalogSearch {
     state = state.copyWith(useFuzzySearch: value);
   }
 
+  void setUseKeywordSearch(bool value) {
+    if (state.useKeywordSearch == value) {
+      return;
+    }
+    state = state.copyWith(useKeywordSearch: value);
+  }
+
   void setTagSearchMovieType(int value) {
     if (state.tagSearchMovieType == value) {
       return;
@@ -171,6 +178,7 @@ class CatalogSearch extends _$CatalogSearch {
           await _consumeMovieOnlineSearch(
             requestVersion: requestVersion,
             movieNumber: trimmed,
+            useKeywordSearch: state.useKeywordSearch,
           );
           _fuzzyLocalResults = null;
         } else {
@@ -532,12 +540,17 @@ class CatalogSearch extends _$CatalogSearch {
   Future<void> _consumeMovieOnlineSearch({
     required int requestVersion,
     required String movieNumber,
+    bool useKeywordSearch = false,
   }) async {
     final completer = Completer<void>();
-    final subscription = ref
-        .read(moviesApiProvider)
-        .searchOnlineMoviesStream(movieNumber: movieNumber)
-        .listen(
+    final stream = useKeywordSearch
+        ? ref
+            .read(moviesApiProvider)
+            .searchOnlineMoviesByKeywordStream(keyword: movieNumber)
+        : ref
+            .read(moviesApiProvider)
+            .searchOnlineMoviesStream(movieNumber: movieNumber);
+    final subscription = stream.listen(
           (update) {
             if (_isCurrent(requestVersion)) {
               _applyMovieSearchStreamUpdate(update);

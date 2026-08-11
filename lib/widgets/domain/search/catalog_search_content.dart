@@ -22,6 +22,8 @@ class CatalogSearchContent extends StatelessWidget {
     required this.onOnlineSearchToggle,
     this.useFuzzySearch = false,
     this.onFuzzySearchToggle,
+    this.useKeywordSearch = false,
+    this.onKeywordSearchToggle,
     required this.onSubmitSearch,
     required this.onTabSelected,
     required this.onMovieTap,
@@ -46,6 +48,10 @@ class CatalogSearchContent extends StatelessWidget {
   /// 模糊搜索开关：默认关闭，与在线搜索并列展示在搜索框右侧。
   final bool useFuzzySearch;
   final ValueChanged<bool>? onFuzzySearchToggle;
+
+  /// 关键词搜索开关。
+  final bool useKeywordSearch;
+  final ValueChanged<bool>? onKeywordSearchToggle;
   final VoidCallback onSubmitSearch;
   final ValueChanged<int> onTabSelected;
   final ValueChanged<MovieListItemDto> onMovieTap;
@@ -103,6 +109,9 @@ class CatalogSearchContent extends StatelessWidget {
                   showFuzzyToggle: onFuzzySearchToggle != null,
                   isFuzzySearchEnabled: useFuzzySearch,
                   onFuzzySearchToggle: onFuzzySearchToggle,
+                  showKeywordToggle: onKeywordSearchToggle != null,
+                  isKeywordSearchEnabled: useKeywordSearch,
+                  onKeywordSearchToggle: onKeywordSearchToggle,
                   onSubmitted: (_) => onSubmitSearch(),
                   onSearchTap: onSubmitSearch,
                 ),
